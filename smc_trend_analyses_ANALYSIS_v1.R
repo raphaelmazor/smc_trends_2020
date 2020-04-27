@@ -580,31 +580,33 @@ site_list_change<-replicated_sites2 %>%
 
 plot_dat_catchange<-annual_means_replicated_sites2 %>% 
   left_join(replicated_sites2 %>% 
-              select(masterid, EarliestYear, LatestYear, MeanCSCI, DeltaCSCI, Slope,PctPassing)) %>%
+              select(masterid, EarliestYear, LatestYear, MeanCSCI, LatestCSCI, DeltaCSCI, Slope,PctPassing)) %>%
   mutate(Class12 = case_when(CSCI>=0.79~"Above",T~"Below")) %>%
-  arrange(PctPassing) %>%
+  arrange(PctPassing, LatestCSCI) %>%
   group_by(masterid) %>%
   mutate(RankYear=rank(-Year)) %>%
   ungroup() %>%
   mutate(mid2 = factor(masterid, levels=masterid %>% unique()))
 
 
+
 catchange_plot<-ggplot(data=plot_dat_catchange,
-       aes(x=mid2, y=RankYear))+
-  geom_point(aes(color=Class12), shape=15)+
-  scale_y_reverse("Sampling event", breaks=(1:9))+
+      aes(x=mid2, y=RankYear))+
+  # geom_point(aes(color=Class12), shape=15)+
+  geom_tile(aes(fill=Class12), color="white")+
+  scale_y_reverse("Sampling event", breaks=(1:9), labels=c("Most\nrecent",rep("",7), "Least\nrecent"))+
   # scale_y_discrete("Sampling event", breaks=(1:9))+
   xlab("site")+
   # scale_color_viridis_d()+
-  scale_color_manual(values=c("#91bfdb","#fc8d59"), name="Condition",
+  scale_fill_manual(values=c("#91bfdb","#fc8d59"), name="Condition",
                      labels=c("Above 0.79","Below 0.79"))+
   theme_classic()+
-  theme(axis.text = element_blank(),
+  theme(axis.text.y = element_blank(),
         axis.ticks = element_blank(),
-        panel.grid.major.y = element_line(color="gray90"),
+        # panel.grid.major.y = element_line(color="gray90"),
         legend.position = "bottom"
         # panel.grid.major = element_line(color="gray90")
-        ) +
+  ) +
   facet_wrap(~smc_lu, scales="free_y")+
   coord_flip()
 ggsave(catchange_plot, filename="figures/catchange_plot.jpg", dpi=300, height=7, width=5)
