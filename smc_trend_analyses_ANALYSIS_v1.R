@@ -544,25 +544,27 @@ stacked_dat$RangeClass<-factor(stacked_dat$RangeClass,
                                         "Decreasing",
                                         "Stable",
                                         "Increasing")))
+# 
+# ggplot(data=stacked_dat, 
+#        aes(x=smc_lu,
+#            y=pct_total))+
+#   geom_bar(aes(fill=RangeClass), stat="identity", position=position_stack())
 
-ggplot(data=stacked_dat, 
-       aes(x=smc_lu,
-           y=pct_total))+
-  geom_bar(aes(fill=RangeClass), stat="identity", position=position_stack())
-
-ggplot(data=stacked_dat %>% 
+stacked_plot<-ggplot(data=stacked_dat %>% 
          # filter(RangeClass!="Indeterminate_low n"), 
          filter(RangeClass %in% c("Increasing","Decreasing","Stable")),
        aes(x=smc_lu,
            y=pct_total_highn))+
-  geom_bar(aes(fill=RangeClass), stat="identity", position=position_stack())+
+  geom_bar(aes(fill=RangeClass), stat="identity", position=position_stack(), color="gray25")+
   ggtitle("Trends in CSCI scores")+
-  scale_fill_viridis_d(name="")+
+  # scale_fill_viridis_d(name="CSCI trend is:")+
+  scale_fill_brewer(palette="RdYlBu", name="CSCI trend:", direction= -1)+
   theme_classic()+
   theme(legend.position="bottom")+
   xlab("")+
-  scale_y_continuous(name="Proportion of sites visited 3 or more times",
+  scale_y_continuous(name="Proportion of sites visited\n3 or more times",
                      breaks=seq(from=0, to=1, by =0.25), limits=c(0,1))
+ggsave(stacked_plot, filename="figures/stacked_plot.jpg", dpi=300, height=5, width=6)
 
 
 #####
