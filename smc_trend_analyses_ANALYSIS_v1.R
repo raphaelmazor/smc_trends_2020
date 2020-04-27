@@ -1,6 +1,6 @@
 library(tidyverse)
-
-
+library(sf)
+library(pwr)
 
 load("data/smc_trends.Rdata")
 
