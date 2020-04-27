@@ -454,9 +454,12 @@ plot.dat<-annual_means_replicated_sites %>%
 trends_plot<-ggplot(data=plot.dat, aes(x=Year, y=CSCI))+
   geom_path(alpha=.1, aes(group=masterid))+
   geom_path(data=plot.dat %>% filter(RangeClass %in% c("Increasing", "Decreasing","Stable")), aes(group=masterid, color=RangeClass), size=1)+
+  geom_path(data=plot.dat %>% filter(RangeClass %in% c("Increasing", "Decreasing")), aes(group=masterid, color=RangeClass), size=1)+
+  geom_path(data=plot.dat %>% filter(RangeClass %in% c("Increasing")), aes(group=masterid, color=RangeClass), size=1)+
   # stat_summary(fun=mean, geom="line", aes(color=smc_lu), size=1)+
-  scale_color_brewer(palette="Set1", name="Trajectory")+
+  # scale_color_brewer(palette="Set1", name="Trajectory")+
   # scale_color_viridis_d(name="Land use")+
+  scale_color_manual(values=c("#fc8d59","#74add1","#a1d99b"), name="Trajectory")+
   theme_classic()+
   geom_hline(yintercept=0.79,linetype="dashed")+
   facet_wrap(~smc_lu)+
@@ -488,7 +491,7 @@ map_effort<-ggplot()+
   geom_sf(data=replicated_sites_sf %>% filter(n_years>2), aes(color=as.factor(n_years)), size=2)+
   scale_color_viridis_d()
 
-ggsave(map_effort, filename="figures/map_effort.jpg", dpi=300, height=12, width=6)
+ggsave(map_effort, filename="figures/map_effort.jpg", dpi=300, width=12, height=6)
 
 map_classification<-ggplot()+
   geom_sf(data=smc_sheds_sf)+
