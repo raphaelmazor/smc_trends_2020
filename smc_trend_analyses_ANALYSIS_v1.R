@@ -580,17 +580,17 @@ site_list_change<-replicated_sites2 %>%
 
 plot_dat_catchange<-annual_means_replicated_sites2 %>% 
   left_join(replicated_sites2 %>% 
-              select(masterid, EarliestYear, LatestYear, MeanCSCI, DeltaCSCI, Slope)) %>%
+              select(masterid, EarliestYear, LatestYear, MeanCSCI, DeltaCSCI, Slope,PctPassing)) %>%
   mutate(Class12 = case_when(CSCI>=0.79~"Above",T~"Below")) %>%
-  arrange(EarliestCSCI) %>%
+  arrange(PctPassing) %>%
   group_by(masterid) %>%
   mutate(RankYear=rank(-Year)) %>%
-  ungroup()
+  ungroup() %>%
+  mutate(mid2 = factor(masterid, levels=masterid %>% unique()))
 
 
-  
-ggplot(data=plot_dat_catchange,
-       aes(x=masterid, y=RankYear))+
+catchange_plot<-ggplot(data=plot_dat_catchange,
+       aes(x=mid2, y=RankYear))+
   geom_point(aes(color=Class12), shape=15)+
   scale_y_reverse("Sampling event", breaks=(1:9))+
   # scale_y_discrete("Sampling event", breaks=(1:9))+
@@ -607,4 +607,4 @@ ggplot(data=plot_dat_catchange,
         ) +
   facet_wrap(~smc_lu, scales="free_y")+
   coord_flip()
-
+ggsave(catchange_plot, filename="figures/catchange_plot.jpg", dpi=300, height=7, width=5)
