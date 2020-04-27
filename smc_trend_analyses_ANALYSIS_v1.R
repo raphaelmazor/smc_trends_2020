@@ -588,34 +588,23 @@ plot_dat_catchange<-annual_means_replicated_sites2 %>%
   ungroup()
 
 
-
-  # mutate(masterid2 = factor(masterid, levels=masterid %>% unique()))
-# 
-# ggplot(data=plot_dat_catchange,
-#        aes(x=masterid, y=Year))+
-#   geom_point(aes(color=CSCI_Class), shape=15, 
-#              position=position_dodge(width=.1)
-#              )+
-#   scale_color_viridis_d()+
-#   theme_classic()+
-#   theme(axis.text.y = element_blank(),
-#         axis.ticks.y = element_blank(),
-#         panel.grid.major = element_line(color="gray80")) +
-#   facet_wrap(~smc_lu, scales="free")+
-#   coord_flip()
-
   
 ggplot(data=plot_dat_catchange,
        aes(x=masterid, y=RankYear))+
-  geom_point(aes(color=Class12), shape=15, 
-             position=position_dodge(width=.1)
-  )+
+  geom_point(aes(color=Class12), shape=15)+
+  scale_y_reverse("Sampling event", breaks=(1:9))+
+  # scale_y_discrete("Sampling event", breaks=(1:9))+
+  xlab("site")+
   # scale_color_viridis_d()+
-  scale_color_manual(values=c("#91bfdb","#fc8d59"), name="Condition")+
+  scale_color_manual(values=c("#91bfdb","#fc8d59"), name="Condition",
+                     labels=c("Above 0.79","Below 0.79"))+
   theme_classic()+
-  theme(axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        panel.grid.major = element_line(color="gray80")) +
-  facet_wrap(~smc_lu, scales="free")+
+  theme(axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid.major.y = element_line(color="gray90"),
+        legend.position = "bottom"
+        # panel.grid.major = element_line(color="gray90")
+        ) +
+  facet_wrap(~smc_lu, scales="free_y")+
   coord_flip()
 
