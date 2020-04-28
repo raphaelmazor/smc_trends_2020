@@ -584,9 +584,34 @@ plot_dat_catchange<-annual_means_replicated_sites2 %>%
   mutate(Class12 = case_when(CSCI>=0.79~"Above",T~"Below")) %>%
   arrange(PctPassing, LatestCSCI) %>%
   group_by(masterid) %>%
-  mutate(RankYear=rank(-Year)) %>%
+  mutate(RankYear=rank(Year)) %>%
   ungroup() %>%
   mutate(mid2 = factor(masterid, levels=masterid %>% unique()))
+plot_dat_catchange$CSCI_fromPrevious<-sapply(1:nrow(plot_dat_catchange), function(i){
+  year.i=plot_dat_catchange$RankYear[i]
+  
+  if(year.i==1)
+    NA
+  else
+  {
+   csci.now=plot_dat_catchange$CSCI[i]
+   csci.prev=plot_dat_catchange$CSCI[i-1]
+   ifelse(csci.now>csci.prev,"Higher","Lower")
+   }
+})
+
+plot_dat_catchange$CSCI_DifffromPrevious<-sapply(1:nrow(plot_dat_catchange), function(i){
+  year.i=plot_dat_catchange$RankYear[i]
+  
+  if(year.i==1)
+    NA
+  else
+  {
+    csci.now=plot_dat_catchange$CSCI[i]
+    csci.prev=plot_dat_catchange$CSCI[i-1]
+    csci.now-csci.prev
+  }
+})
 
 
 
@@ -599,7 +624,8 @@ catchange_plot<-ggplot(data=plot_dat_catchange,
   xlab("site")+
   # scale_color_viridis_d()+
   scale_fill_manual(values=c("#91bfdb","#fc8d59"), name="Condition",
-                     labels=c("Above 0.79","Below 0.79"))+
+                     # labels=c("Above 0.79","Below 0.79"))+
+                    labels=c("Passing","Failing"))+
   theme_classic()+
   theme(axis.text.y = element_blank(),
         axis.ticks = element_blank(),
@@ -610,3 +636,100 @@ catchange_plot<-ggplot(data=plot_dat_catchange,
   facet_wrap(~smc_lu, scales="free_y")+
   coord_flip()
 ggsave(catchange_plot, filename="figures/catchange_plot.jpg", dpi=300, height=7, width=5)
+
+#Plot of pass/fail:
+catchange_plot_pf<-ggplot(data=plot_dat_catchange,
+       aes(x=mid2, y=Year))+
+  # geom_point(aes(color=Class12), shape=15)+
+  geom_tile(aes(fill=Class12), color="white")+
+  # scale_y_reverse("Sampling event", breaks=(1:9), labels=c("Most\nrecent",rep("",7), "Least\nrecent"))+
+  # scale_y_discrete("Sampling event", breaks=(1:9))+
+  xlab("site")+
+  # scale_color_viridis_d()+
+  scale_fill_manual(values=c("#91bfdb","#fc8d59"), name="Condition",
+                    # labels=c("Above 0.79","Below 0.79"))+
+                    labels=c("Passing","Failing"))+
+  theme_classic()+
+  theme(axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        # panel.grid.major.y = element_line(color="gray90"),
+        legend.position = "bottom"
+        # panel.grid.major = element_line(color="gray90")
+  ) +
+  facet_wrap(~smc_lu, scales="free_y")+
+  coord_flip()
+ggsave(catchange_plot_pf, filename="figures/catchange_plot_pf.jpg", dpi=300, height=7, width=5)
+
+#Plot of raw score
+catchange_plot_raw<-ggplot(data=plot_dat_catchange,
+       aes(x=mid2, y=Year))+
+  # geom_point(aes(color=Class12), shape=15)+
+  geom_tile(aes(fill=CSCI), color="white")+
+  # scale_y_reverse("Sampling event", breaks=(1:9), labels=c("Most\nrecent",rep("",7), "Least\nrecent"))+
+  # scale_y_discrete("Sampling event", breaks=(1:9))+
+  xlab("site")+
+  # scale_color_viridis_d()+
+  scale_fill_gradient2(high="#2c7bb6",low="#d7191c", mid="#ffffbf", midpoint=0.79, name="CSCI score"
+                    # labels=c("Above 0.79","Below 0.79"))
+                    )+
+  theme_classic()+
+  theme(axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        # panel.grid.major.y = element_line(color="gray90"),
+        legend.position = "bottom"
+        # panel.grid.major = element_line(color="gray90")
+  ) +
+  facet_wrap(~smc_lu, scales="free_y")+
+  coord_flip()
+ggsave(catchange_plot_raw, filename="figures/catchange_plot_raw.jpg", dpi=300, height=7, width=5)
+
+
+
+#Plot of raw chnage from previous year
+catchange_plot_changefromprevious<-ggplot(data=plot_dat_catchange,
+                           aes(x=mid2, y=Year))+
+  # geom_point(aes(color=Class12), shape=15)+
+  geom_tile(aes(fill=CSCI_DifffromPrevious), color="white")+
+  # scale_y_reverse("Sampling event", breaks=(1:9), labels=c("Most\nrecent",rep("",7), "Least\nrecent"))+
+  # scale_y_discrete("Sampling event", breaks=(1:9))+
+  xlab("site")+
+  # scale_color_viridis_d()+
+  scale_fill_gradient2(high="#2c7bb6",low="#d7191c", mid="#ffffbf", midpoint=0, name="Change from\nprevious sample",
+                       na.value = "gray75", breaks=c(-.5, 0,.5)
+                       # labels=c("Above 0.79","Below 0.79"))
+  )+
+  theme_classic()+
+  theme(axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        # panel.grid.major.y = element_line(color="gray90"),
+        legend.position = "bottom"
+        # panel.grid.major = element_line(color="gray90")
+  ) +
+  facet_wrap(~smc_lu, scales="free_y")+
+  coord_flip()
+ggsave(catchange_plot_changefromprevious, filename="figures/catchange_plot_changefromprevious.jpg", dpi=300, height=7, width=5)
+
+
+#Plot of class chnage from previous year
+catchange_plot_changefromprevious_class<-ggplot(data=plot_dat_catchange,
+                                          aes(x=mid2, y=Year))+
+  # geom_point(aes(color=Class12), shape=15)+
+  geom_tile(aes(fill=CSCI_fromPrevious), color="white")+
+  # scale_y_reverse("Sampling event", breaks=(1:9), labels=c("Most\nrecent",rep("",7), "Least\nrecent"))+
+  # scale_y_discrete("Sampling event", breaks=(1:9))+
+  xlab("site")+
+  # scale_color_viridis_d()+
+  scale_fill_manual(values=c("#91bfdb","#fc8d59"), name="Change from\nprevious sampling",na.value="gray75",
+                    # labels=c("Above 0.79","Below 0.79"))+
+                    labels=c("Higher","Lower","First event")
+                    )+
+  theme_classic()+
+  theme(axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        # panel.grid.major.y = element_line(color="gray90"),
+        legend.position = "bottom"
+        # panel.grid.major = element_line(color="gray90")
+  ) +
+  facet_wrap(~smc_lu, scales="free_y")+
+  coord_flip()
+ggsave(catchange_plot_changefromprevious_class, filename="figures/catchange_plot_changefromprevious_class.jpg", dpi=300, height=7, width=5)
