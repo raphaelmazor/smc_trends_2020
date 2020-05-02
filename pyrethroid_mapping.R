@@ -157,3 +157,79 @@ ggplot(data=relationship.df, aes(x=))
 
 
 sum(pyrethroids$RLOC > pyrethroids$LEB,na.rm=T)
+
+
+####
+pyrethroids<-read.csv("data/pyrethroid_data_050120.csv", stringsAsFactors = F) %>%
+  mutate(
+    Assessment = case_when(
+      OrgNorm > LEB ~ "Likely",
+      RLOC > LEB ~ "RL too high",
+      OrgNorm > TEB ~"Possible",
+      RLOC > TEB ~ "Possible or Unlikely",
+      OrgNorm< TEB & OrgNorm > 0 ~ "Unlikely (<TEB)",
+      OrgNorm< TEB & OrgNorm == 0 ~ "Unlikely-ND",
+      T~"XXXXXX"), 
+    Assessment.f = factor(Assessment, levels=c(
+      "Unlikely-ND",
+      "Unlikely (<TEB)",
+      "Possible or Unlikely",
+      "Possible",
+      "Likely",
+      "RL too high")), 
+    Assessment.n = as.numeric(Assessment.f)  )
+
+pyrethroids$Assessment.n[pyrethroids$Assessment.n==6]<- -1
+
+assessment_xwalk<-mydf %>%
+  select(Assessment, Assessment.f, Assessment.n) %>%
+  unique()
+
+result <- df %>% 
+  group_by(A, B) %>%
+  filter(value == max(value)) %>%
+  arrange(A,B,C)
+
+plot_dat<-pyrethroids %>%
+  select(masterid, smc_lu,Assessment.n)  %>%
+  unique() %>%
+  group_by(masterid, smc_lu) %>%
+  filter(Assessment.n==max(Assessment.n)) %>%
+  ungroup() %>%
+  inner_join(assessment_xwalk) %>%
+  group_by(smc_lu,Assessment.f) %>%
+  tally() 
+
+plot_dat$total_lu<-sapply(1:nrow(plot_dat),function(i){
+  lu.i<-plot_dat$smc_lu[i]
+  # ass.i<-plot_dat$Assessment.f[i]
+  xdf<-plot_dat %>% filter(smc_lu == lu.i)
+  sum(xdf$n)
+})  
+
+plot_dat$Prop <-plot_dat$n/plot_dat$total_lu
+
+pyreth_conc_lu_stack<-ggplot(data=plot_dat, aes(x=smc_lu, y=Prop))+
+  geom_bar(aes(fill=Assessment.f), stat="identity", position=position_stack(), color="gray")+
+  scale_fill_brewer(palette="Reds", name="Adverse effects")+
+  xlab("")+ylab("Proportion of sites")+
+  theme_classic(base_size=8)
+ggsave(pyreth_conc_lu_stack, filename="figures/pyrethroids/pyreth_conc_lu_stack.jpg", dpi=300, height=3,width=4)
+
+plot_dat2<-pyrethroids %>%
+  select(masterid, smc_lu,result, OrgNorm)  %>%
+  mutate(res2 =case_when(result< 0 ~ 0,
+                         T~result)) %>%
+  group_by(masterid, smc_lu) %>%
+  summarise( Total=sum(res2),
+            TotalOC=sum(OrgNorm)) %>%
+  ungroup()
+
+plot_dat2[which.max(plot_dat2$TotalOC),]
+
+ 
+options(scipen = 999) #Turn off scientific notation
+ggplot(data=plot_dat2, aes(x=smc_lu, y=TotalOC+.01))+
+  geom_boxplot()+
+  # geom_point(position=position_jitter(width=0.05, height=0))+
+  scale_y_continuous(trans="log10", name="Total pyrethroids + 0.01 ug/g OC")

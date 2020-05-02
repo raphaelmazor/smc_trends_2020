@@ -562,12 +562,12 @@ stacked_plot<-ggplot(data=stacked_dat %>%
   ggtitle("Trends in CSCI scores")+
   # scale_fill_viridis_d(name="CSCI trend is:")+
   scale_fill_brewer(palette="RdYlBu", name="CSCI trend:", direction= -1)+
-  theme_classic()+
+  theme_classic(base_size = 6)+
   theme(legend.position="bottom")+
   xlab("")+
   scale_y_continuous(name="Proportion of sites visited\n3 or more times",
                      breaks=seq(from=0, to=1, by =0.25), limits=c(0,1))
-ggsave(stacked_plot, filename="figures/stacked_plot.jpg", dpi=300, height=5, width=6)
+ggsave(stacked_plot, filename="figures/stacked_plot.jpg", dpi=300, height=3, width=3)
 
 
 #####
@@ -652,13 +652,16 @@ catchange_plot_pf<-ggplot(data=plot_dat_catchange,
   theme_classic()+
   theme(axis.text.y = element_blank(),
         axis.ticks = element_blank(),
+        axis.text.x = element_text(angle=45, hjust=1),
         # panel.grid.major.y = element_line(color="gray90"),
         legend.position = "bottom"
         # panel.grid.major = element_line(color="gray90")
   ) +
   facet_wrap(~smc_lu, scales="free_y")+
+  scale_y_continuous(breaks=c(2000,2010,2020))+
   coord_flip()
-ggsave(catchange_plot_pf, filename="figures/catchange_plot_pf.jpg", dpi=300, height=7, width=5)
+# ggsave(catchange_plot_pf, filename="figures/catchange_plot_pf.jpg", dpi=300, height=7, width=5)
+ggsave(catchange_plot_pf, filename="figures/catchange_plot_pf.jpg", dpi=300, height=4, width=3)
 
 #Plot of raw score
 catchange_plot_raw<-ggplot(data=plot_dat_catchange,
@@ -669,20 +672,24 @@ catchange_plot_raw<-ggplot(data=plot_dat_catchange,
   # scale_y_discrete("Sampling event", breaks=(1:9))+
   xlab("site")+
   # scale_color_viridis_d()+
-  scale_fill_gradient2(high="#2c7bb6",low="#d7191c", mid="#ffffbf", midpoint=0.79, name="CSCI score"
+  scale_fill_gradient2(high="#2c7bb6",low="#d7191c", mid="#ffffbf", midpoint=0.79, name=""
                     # labels=c("Above 0.79","Below 0.79"))
                     )+
   theme_classic()+
   theme(axis.text.y = element_blank(),
         axis.ticks = element_blank(),
+        axis.text.x = element_text(angle=45, hjust=1),
         # panel.grid.major.y = element_line(color="gray90"),
         legend.position = "bottom"
         # panel.grid.major = element_line(color="gray90")
   ) +
+  ggtitle("CSCI score")+
   facet_wrap(~smc_lu, scales="free_y")+
+  scale_y_continuous(breaks=c(2000,2010,2020))+
   coord_flip()
-ggsave(catchange_plot_raw, filename="figures/catchange_plot_raw.jpg", dpi=300, height=7, width=5)
-
+# ggsave(catchange_plot_raw, filename="figures/catchange_plot_raw.jpg", dpi=300, height=7, width=5)
+ggsave(catchange_plot_raw,
+       filename="figures/catchange_plot_raw.jpg", dpi=300, height=4, width=3)
 
 
 #Plot of raw chnage from previous year
@@ -719,17 +726,21 @@ catchange_plot_changefromprevious_class<-ggplot(data=plot_dat_catchange,
   # scale_y_discrete("Sampling event", breaks=(1:9))+
   xlab("site")+
   # scale_color_viridis_d()+
-  scale_fill_manual(values=c("#91bfdb","#fc8d59"), name="Change from\nprevious sampling",na.value="gray75",
+  scale_fill_manual(values=c("#91bfdb","#fc8d59"), name="",na.value="gray75",
                     # labels=c("Above 0.79","Below 0.79"))+
                     labels=c("Higher","Lower","First event")
                     )+
   theme_classic()+
   theme(axis.text.y = element_blank(),
         axis.ticks = element_blank(),
+        axis.text.x = element_text(angle=45, hjust=1),
         # panel.grid.major.y = element_line(color="gray90"),
         legend.position = "bottom"
         # panel.grid.major = element_line(color="gray90")
   ) +
   facet_wrap(~smc_lu, scales="free_y")+
+  scale_y_continuous(breaks=c(2000,2010,2020))+
+  ggtitle("Change from previous sampling")+
   coord_flip()
-ggsave(catchange_plot_changefromprevious_class, filename="figures/catchange_plot_changefromprevious_class.jpg", dpi=300, height=7, width=5)
+# ggsave(catchange_plot_changefromprevious_class, filename="figures/catchange_plot_changefromprevious_class.jpg", dpi=300, height=7, width=5)
+ggsave(catchange_plot_changefromprevious_class, filename="figures/catchange_plot_changefromprevious_class.jpg", dpi=300, height=4, width=3)
