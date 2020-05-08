@@ -663,6 +663,42 @@ catchange_plot_pf<-ggplot(data=plot_dat_catchange,
 # ggsave(catchange_plot_pf, filename="figures/catchange_plot_pf.jpg", dpi=300, height=7, width=5)
 ggsave(catchange_plot_pf, filename="figures/catchange_plot_pf.jpg", dpi=300, height=4, width=3)
 
+plot_dat_catchange$smc_lu2<-factor(plot_dat_catchange$smc_lu, levels=c("Open","Agricultural","Urban"))
+levels(plot_dat_catchange$smc_lu2)<-c("Open\nsites","Agricultural\nsites", "Urban\nsites")
+
+class_plot_pf<-ggplot(data=plot_dat_catchange,
+                          aes(x=mid2, y=Year))+
+  # geom_point(aes(color=Class12), shape=15)+
+  geom_tile(aes(fill=CSCI_Class), color="white")+
+  # scale_y_reverse("Sampling event", breaks=(1:9), labels=c("Most\nrecent",rep("",7), "Least\nrecent"))+
+  # scale_y_discrete("Sampling event", breaks=(1:9))+
+  xlab("")+ylab("")+
+  # scale_color_viridis_d()+
+  scale_fill_brewer(palette="RdYlBu", direction=-1, name="",
+                    labels=c("Likely\nintact","Possibly\naltered","Likely\naltered","Very likely\naltered"))+
+  # theme_classic(base_size = 12)+
+  theme(axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        # axis.text.x = element_text(angle=45, hjust=1),
+        # panel.grid.major.y = element_line(color="gray90"),
+        legend.position = "bottom",
+        legend.text = element_text(size=9),
+        strip.text = element_text(size=10),
+        strip.background = element_blank(),
+        panel.border = element_rect(color="black", fill=NA),
+        panel.grid = element_blank(), 
+        panel.background = element_blank(),
+        strip.text.y.left = element_text(angle = 0)
+        # panel.grid.major = element_line(color="gray90")
+  ) +
+  # facet_wrap(~smc_lu, scales="free_y")+
+  facet_grid(smc_lu2~., scales="free_y", space="free", switch="y")+
+  scale_y_continuous(breaks=c(2000,2010,2020))+
+  coord_flip()
+# ggsave(catchange_plot_pf, filename="figures/catchange_plot_pf.jpg", dpi=300, height=7, width=5)
+ggsave(class_plot_pf, filename="figures/class_plot_pf.jpg", dpi=300, height=6, width=4.5)
+
+
 #Plot of raw score
 catchange_plot_raw<-ggplot(data=plot_dat_catchange,
        aes(x=mid2, y=Year))+
