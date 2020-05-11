@@ -696,7 +696,7 @@ class_plot_pf<-ggplot(data=plot_dat_catchange,
   scale_y_continuous(breaks=c(2000,2010,2020))+
   coord_flip()
 # ggsave(catchange_plot_pf, filename="figures/catchange_plot_pf.jpg", dpi=300, height=7, width=5)
-ggsave(class_plot_pf, filename="figures/class_plot_pf.jpg", dpi=300, height=6, width=4.5)
+ggsave(class_plot_pf, filename="figures/class_plot_pf.jpg", dpi=300, height=8, width=4.5)
 
 
 #Plot of raw score
