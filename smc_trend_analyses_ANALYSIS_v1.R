@@ -780,3 +780,43 @@ catchange_plot_changefromprevious_class<-ggplot(data=plot_dat_catchange,
   coord_flip()
 # ggsave(catchange_plot_changefromprevious_class, filename="figures/catchange_plot_changefromprevious_class.jpg", dpi=300, height=7, width=5)
 ggsave(catchange_plot_changefromprevious_class, filename="figures/catchange_plot_changefromprevious_class.jpg", dpi=300, height=4, width=3)
+
+#######
+
+
+comb.df<-read.csv("data/CombDF.csv", stringsAsFactors = F)
+head(comb.df)
+nrow(comb.df)
+
+plot_dat_CSCI<-comb.df %>%
+  select(masterid, SiteYear, PyrethroidSum, PyrethroidSum_OrgNorm , csci) %>%
+  na.omit()
+plot_dat_ASCI<-comb.df %>%
+  select(masterid, SiteYear, PyrethroidSum, PyrethroidSum_OrgNorm ,  ASCI.hybrid) %>%
+  na.omit()
+
+plot_dat_CSCI[which.max(plot_dat_CSCI$PyrethroidSum),]
+
+ggplot(data=plot_dat_CSCI, aes(x=PyrethroidSum, y=csci))+
+  geom_point()+
+  geom_quantile(quantiles=c(.5,.6,.7,.8, .9), color="gray")+
+  theme_classic()
+
+ggplot(data=plot_dat_ASCI, aes(x=PyrethroidSum, y=ASCI.hybrid))+
+  geom_point()+
+  geom_quantile(quantiles=c(.5,.6,.7,.8, .9), color="gray")+
+  theme_classic()
+
+
+
+ggplot(data=plot_dat_CSCI, aes(x=PyrethroidSum_OrgNorm, y=csci))+
+  geom_point()+
+  geom_quantile(quantiles=c(.5,.6,.7,.8, .9), color="gray")+
+  theme_classic()
+
+
+ggplot(data=plot_dat_ASCI, aes(x=PyrethroidSum_OrgNorm, y=ASCI.hybrid))+
+  geom_point()+
+  geom_quantile(quantiles=c(.5,.6,.7,.8, .9), color="gray")+
+  theme_classic()
+
