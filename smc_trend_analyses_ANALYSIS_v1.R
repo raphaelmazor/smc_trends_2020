@@ -4,6 +4,8 @@ library(pwr)
 
 load("data/smc_trends.Rdata")
 
+
+
 mydf<-lu_station.df %>%
   filter(probabilistic=="true") %>%
   select(masterid, stationid, latitude, longitude, huc, county, smcshed, smc_lu, probabilistic) %>%
@@ -493,13 +495,23 @@ map_effort<-ggplot()+
 
 ggsave(map_effort, filename="figures/map_effort.jpg", dpi=300, width=12, height=6)
 
-map_classification<-ggplot()+
+replicated_sites_sf2<-replicated_sites_sf %>%
+  mutate(Class2 = case_when(RangeClass %in% c("Indeterminate","Indeterminate_low n") ~ "Indeterminate",
+                            T~RangeClass))
+replicated_sites_sf2$Class2<-factor(replicated_sites_sf2$Class2, levels=c("Indeterminate","Decreasing","Stable","Increasing"))
+map_classification<-
+  ggplot()+
   geom_sf(data=smc_sheds_sf)+
-  geom_sf(data=replicated_sites_sf, color="gray")+
-  geom_sf(data=replicated_sites_sf %>% filter(RangeClass %in% c("Stable","Increasing","Decreasing")), aes(color=RangeClass), size=2)+
-  scale_color_viridis_d(name="Classification")
+  # geom_sf(data=replicated_sites_sf, color="gray")+
+  geom_sf(data=replicated_sites_sf2, aes(color=Class2), size=2)+
+  scale_color_manual(values=c("gray", viridisLite::viridis(3, option="D") ), name="Change in\nCSCI scores")+
+  theme_minimal()+
+  theme(legend.position = "bottom",
+        axis.text=element_blank(),
+        panel.grid = element_blank())
+# scale_color_viridis_d(name="Classification")
 
-ggsave(map_classification, filename="figures/map_classification.jpg", dpi=300, height=6, width=12)
+ggsave(map_classification, filename="figures/map_classification.jpg", dpi=300, height=6, width=6)
 
 
 changing_sites<-replicated_sites2 %>%
@@ -547,6 +559,15 @@ stacked_dat$RangeClass<-factor(stacked_dat$RangeClass,
                                         "Decreasing",
                                         "Stable",
                                         "Increasing")))
+replicated_sites2%>%
+  group_by(smc_lu) %>%
+  tally()
+
+stacked_dat$lu<-case_when(stacked_dat$smc_lu=="Agricultural"~"Agricultural (25)",
+                          stacked_dat$smc_lu=="Open"~"Open (107)",
+                          stacked_dat$smc_lu=="Urban"~"Urban (67)",
+                          T~"x")
+
 # 
 # ggplot(data=stacked_dat, 
 #        aes(x=smc_lu,
@@ -556,7 +577,7 @@ stacked_dat$RangeClass<-factor(stacked_dat$RangeClass,
 stacked_plot<-ggplot(data=stacked_dat %>% 
          # filter(RangeClass!="Indeterminate_low n"), 
          filter(RangeClass %in% c("Increasing","Decreasing","Stable")),
-       aes(x=smc_lu,
+       aes(x=lu,
            y=pct_total_highn))+
   geom_bar(aes(fill=RangeClass), stat="identity", position=position_stack(), color="gray25")+
   ggtitle("Trends in CSCI scores")+
@@ -666,15 +687,19 @@ ggsave(catchange_plot_pf, filename="figures/catchange_plot_pf.jpg", dpi=300, hei
 plot_dat_catchange$smc_lu2<-factor(plot_dat_catchange$smc_lu, levels=c("Open","Agricultural","Urban"))
 levels(plot_dat_catchange$smc_lu2)<-c("Open\nsites","Agricultural\nsites", "Urban\nsites")
 
+blank_tiles<-crossing(plot_dat_catchange %>% select(mid2, smc_lu2),
+                      Year=2000:2020)
+
 class_plot_pf<-ggplot(data=plot_dat_catchange,
                           aes(x=mid2, y=Year))+
   # geom_point(aes(color=Class12), shape=15)+
-  geom_tile(aes(fill=CSCI_Class), color="white")+
+  geom_tile(data=blank_tiles, fill="white", color="gray80")+
+  geom_tile(aes(fill=CSCI_Class))+
   # scale_y_reverse("Sampling event", breaks=(1:9), labels=c("Most\nrecent",rep("",7), "Least\nrecent"))+
   # scale_y_discrete("Sampling event", breaks=(1:9))+
   xlab("")+ylab("")+
   # scale_color_viridis_d()+
-  scale_fill_brewer(palette="RdYlBu", direction=-1, name="",
+  scale_fill_brewer(palette="RdYlBu", direction=-1, name="CSCI\nCondition Class",
                     labels=c("Likely\nintact","Possibly\naltered","Likely\naltered","Very likely\naltered"))+
   # theme_classic(base_size = 12)+
   theme(axis.text.y = element_blank(),
@@ -682,7 +707,8 @@ class_plot_pf<-ggplot(data=plot_dat_catchange,
         # axis.text.x = element_text(angle=45, hjust=1),
         # panel.grid.major.y = element_line(color="gray90"),
         legend.position = "bottom",
-        legend.text = element_text(size=9),
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=7),
         strip.text = element_text(size=10),
         strip.background = element_blank(),
         panel.border = element_rect(color="black", fill=NA),
@@ -782,41 +808,152 @@ catchange_plot_changefromprevious_class<-ggplot(data=plot_dat_catchange,
 ggsave(catchange_plot_changefromprevious_class, filename="figures/catchange_plot_changefromprevious_class.jpg", dpi=300, height=4, width=3)
 
 #######
+#Channel engineering
+con <- dbConnect(
+  PostgreSQL(),
+  host = "192.168.1.17",
+  dbname = 'smc',
+  user = 'smcread',
+  password = '1969$Harbor' # if we post to github, we might want to do rstudioapi::askForPassword()
+)
+
+# chan.df<-read.csv("data/chan_eng_hardeneddistances_CF.csv", stringsAsFactors = F)
+chan.df<- dbGetQuery(con, ' 
+                      SELECT * FROM
+                      sde.unified_channelengineering
+                            ') 
+chan.df$rightsideofstructure %>% unique()
+chan.df2<-chan.df %>%
+  select(stationcode, channeltype, bottom, leftsideofstructure, rightsideofstructure) %>%
+  unique() %>%
+  mutate(Class3=case_when(channeltype =="Engineered" & bottom %in% c("Concrete", "Grouted rock","Other", "Rock")~"Hard-bottom",
+                          channeltype =="Engineered" & bottom %in% c("Soft/Natural")~"All or partially earthen",
+                          channeltype =="Natural" ~ "Natural"),
+         Class4=case_when(channeltype =="Engineered" & bottom %in% c("Concrete", "Grouted rock", "Rock","Other")~"Hard-bottom",
+                          channeltype =="Engineered" & bottom %in% c("Soft/Natural") & leftsideofstructure %in% c("Concrete", "Grouted rock", "Rock","Grouted Rock","Other")~"Soft-bottom",
+                          channeltype =="Engineered" & bottom %in% c("Soft/Natural") & rightsideofstructure %in% c("Concrete", "Grouted rock", "Rock","Grouted Rock", "ROck","Other")~"Soft-bottom",
+                          channeltype =="Engineered" & bottom %in% c("Soft/Natural") & leftsideofstructure %in% c("Earthen", "Earthen bare", "Vegetative/Natural")~"Earthen",
+                          channeltype =="Engineered" & bottom %in% c("Soft/Natural") & rightsideofstructure %in% c("Earthen", "Earthen bare", "Vegetative/Natural")~"Earthen",
+                          channeltype =="Natural" ~ "Natural")) %>%
+  inner_join(lu_station.df %>% select(masterid, stationcode=stationid)) %>%
+  select(-stationcode) %>%
+  unique() 
+
+chan.df2$Class3<-factor(chan.df2$Class3, levels=c("Natural","All or partially earthen","Hard-bottom"))
+chan.df2$Class4<-factor(chan.df2$Class4, levels=c("Natural","Earthen","Soft-bottom","Hard-bottom"))
 
 
-comb.df<-read.csv("data/CombDF.csv", stringsAsFactors = F)
-head(comb.df)
-nrow(comb.df)
+plot_dat_catchange2<-plot_dat_catchange %>%
+  inner_join(chan.df2) %>%
+  filter(Class4!="Natural")
+               
 
-plot_dat_CSCI<-comb.df %>%
-  select(masterid, SiteYear, PyrethroidSum, PyrethroidSum_OrgNorm , csci) %>%
-  na.omit()
-plot_dat_ASCI<-comb.df %>%
-  select(masterid, SiteYear, PyrethroidSum, PyrethroidSum_OrgNorm ,  ASCI.hybrid) %>%
-  na.omit()
+blank_tiles2<-crossing(plot_dat_catchange2 %>% select(mid2, Class4),
+                      Year=2000:2020)
 
-plot_dat_CSCI[which.max(plot_dat_CSCI$PyrethroidSum),]
+CHAN_ENG_class_plot_pf<-ggplot(data=plot_dat_catchange2,
+                      aes(x=mid2, y=Year))+
+  # geom_point(aes(color=Class12), shape=15)+
+  geom_tile(data=blank_tiles2, fill="white", color="gray80")+
+  geom_tile(aes(fill=CSCI_Class))+
+  # scale_y_reverse("Sampling event", breaks=(1:9), labels=c("Most\nrecent",rep("",7), "Least\nrecent"))+
+  # scale_y_discrete("Sampling event", breaks=(1:9))+
+  xlab("")+ylab("")+
+  # scale_color_viridis_d()+
+  scale_fill_brewer(palette="RdYlBu", direction=-1, name="CSCI\nCondition Class",
+                    labels=c("Likely\nintact","Possibly\naltered","Likely\naltered","Very likely\naltered"))+
+  # theme_classic(base_size = 12)+
+  theme(#axis.text.y = element_blank(),
+    strip.placement = "outside",
+        axis.ticks = element_blank(),
+        # axis.text.x = element_text(angle=45, hjust=1),
+        # panel.grid.major.y = element_line(color="gray90"),
+        legend.position = "bottom",
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=7),
+        strip.text = element_text(size=10),
+        strip.background = element_blank(),
+        panel.border = element_rect(color="black", fill=NA),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        strip.text.y.left = element_text(angle = 0)
+        # panel.grid.major = element_line(color="gray90")
+  ) +
+  # facet_wrap(~smc_lu, scales="free_y")+
+  facet_grid(Class4~., scales="free_y", space="free", switch="y")+
+  scale_y_continuous(breaks=c(2000,2010,2020))+
+  coord_flip()
+# ggsave(catchange_plot_pf, filename="figures/catchange_plot_pf.jpg", dpi=300, height=7, width=5)
+ggsave(CHAN_ENG_class_plot_pf, filename="figures/CHAN_ENG_class_plot_pf.jpg", dpi=300, height=8, width=5)
 
-ggplot(data=plot_dat_CSCI, aes(x=PyrethroidSum, y=csci))+
-  geom_point()+
-  geom_quantile(quantiles=c(.5,.6,.7,.8, .9), color="gray")+
-  theme_classic()
-
-ggplot(data=plot_dat_ASCI, aes(x=PyrethroidSum, y=ASCI.hybrid))+
-  geom_point()+
-  geom_quantile(quantiles=c(.5,.6,.7,.8, .9), color="gray")+
-  theme_classic()
 
 
+#
+replicated_sites3<-replicated_sites2 %>%
+  inner_join(chan.df2)
+stacked_dat2<-crossing(smc_lu=replicated_sites3$Class4 %>% unique(),
+                      RangeClass=replicated_sites3$RangeClass %>% unique())
+stacked_dat2$n_total<-sapply(1:nrow(stacked_dat2),function(i){
+  class.i<-stacked_dat2$RangeClass[i]
+  lu.i<-stacked_dat2$smc_lu[i]
+  xdf<-replicated_sites3 %>%
+    filter(Class4==lu.i )
+  nrow(xdf)
+})
 
-ggplot(data=plot_dat_CSCI, aes(x=PyrethroidSum_OrgNorm, y=csci))+
-  geom_point()+
-  geom_quantile(quantiles=c(.5,.6,.7,.8, .9), color="gray")+
-  theme_classic()
+stacked_dat2$n_total_high<-  sapply(1:nrow(stacked_dat2),function(i){
+  class.i<-stacked_dat2$RangeClass[i]
+  lu.i<-stacked_dat2$smc_lu[i]
+  xdf<-replicated_sites3 %>%
+    filter(Class4==lu.i & RangeClass!="Indeterminate_low n")
+  nrow(xdf)
+})
 
+stacked_dat2$n_sites<-sapply(1:nrow(stacked_dat2),function(i){
+  class.i<-stacked_dat2$RangeClass[i]
+  lu.i<-stacked_dat2$smc_lu[i]
+  xdf<-replicated_sites3 %>%
+    filter(Class4==lu.i & RangeClass==class.i)
+  nrow(xdf)
+})
 
-ggplot(data=plot_dat_ASCI, aes(x=PyrethroidSum_OrgNorm, y=ASCI.hybrid))+
-  geom_point()+
-  geom_quantile(quantiles=c(.5,.6,.7,.8, .9), color="gray")+
-  theme_classic()
+stacked_dat2$pct_total<-stacked_dat2$n_sites/stacked_dat2$n_total
+stacked_dat2$pct_total_highn<-stacked_dat2$n_sites/stacked_dat2$n_total_high
 
+stacked_dat2$RangeClass<-factor(stacked_dat2$RangeClass,
+                               levels= rev(c("Indeterminate_low n",
+                                             "Indeterminate",
+                                             "Decreasing",
+                                             "Stable",
+                                             "Increasing")))
+replicated_sites3%>%
+  group_by(Class4) %>%
+  tally()
+
+stacked_dat2$lu<-case_when(stacked_dat2$smc_lu=="Natural"~"Natural",
+                          stacked_dat2$smc_lu=="Earthen"~"Earthen",
+                          stacked_dat2$smc_lu=="Soft-bottom"~"Soft-bottom",
+                          stacked_dat2$smc_lu=="Hard-bottom"~"Hard-bottom",
+                          T~"x")
+
+# 
+# ggplot(data=stacked_dat, 
+#        aes(x=smc_lu,
+#            y=pct_total))+
+#   geom_bar(aes(fill=RangeClass), stat="identity", position=position_stack())
+
+CHANstacked_plot<-ggplot(data=stacked_dat2 %>% 
+                       # filter(RangeClass!="Indeterminate_low n"), 
+                       filter(RangeClass %in% c("Increasing","Decreasing","Stable")),
+                     aes(x=lu,
+                         y=pct_total_highn))+
+  geom_bar(aes(fill=RangeClass), stat="identity", position=position_stack(), color="gray25")+
+  ggtitle("Trends in CSCI scores")+
+  # scale_fill_viridis_d(name="CSCI trend is:")+
+  scale_fill_brewer(palette="RdYlBu", name="CSCI trend:", direction= -1)+
+  theme_classic()+
+  theme(legend.position="bottom")+
+  xlab("")+
+  scale_y_continuous(name="Proportion of sites visited\n3 or more times",
+                     breaks=seq(from=0, to=1, by =0.25), limits=c(0,1))
+ggsave(CHANstacked_plot, filename="figures/CHANstacked_plot.jpg", dpi=300, height=3, width=4)
